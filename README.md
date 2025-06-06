@@ -1,15 +1,21 @@
-# RFP Proposal Generator
+# RFP Proposal Generator (Technically Focused)
 
-This project uses AI (Pydantic AI with OpenAI) to generate draft proposals based on an input RFP document (PDF or Markdown) and a specified technology focus.
+This project uses AI (Pydantic AI with OpenAI) to generate **technically focused draft proposals** based on an input RFP document (PDF or Markdown) and a specified technology focus. The goal is to accelerate the creation of initial technical documentation for proposals.
 
 ## Features
 
-*   Parses RFP files (PDF and Markdown).
+*   Parses RFP files (PDF and Markdown) to extract text.
 *   Uses AI agents to:
-    *   Review the RFP and extract key information (summary, requirements, evaluation criteria).
-    *   Generate a technical solution section based on RFP requirements and a chosen technology.
-*   Formats the generated content into a Markdown proposal.
-*   Provides a Command-Line Interface (CLI) for easy use.
+    *   Analyze the RFP and provide a summary, list key requirements, and identify evaluation criteria.
+    *   Generate core technical sections for a proposal, including:
+            *   **Understanding of Requirements**: A narrative based on the RFP analysis.
+            *   **Solution Overview**: Describing the proposed technical solution.
+            *   **Solution Architecture**: Including a textual description and a **Mermaid script** for a conceptual/reference architecture diagram.
+            *   **OEM Solution Overview (if applicable)**: If the chosen technology is a specific OEM product (e.g., "OutSystems", "Salesforce"), a brief overview of that product is generated.
+*   Formats the generated content into a clean Markdown proposal.
+*   Provides a Command-Line Interface (CLI) for ease of use.
+
+**Note:** This generator focuses on the *technical aspects* of a proposal. It does not currently generate sections like company profiles, detailed project timelines, milestones, or pricing.
 
 ## Setup
 
@@ -18,7 +24,7 @@ This project uses AI (Pydantic AI with OpenAI) to generate draft proposals based
     git clone <repository_url>
     cd <repository_directory_name>
     ```
-    (Replace `<repository_url>` and `<repository_directory_name>` with actual values if known, otherwise use generic placeholders)
+    (Replace `<repository_url>` and `<repository_directory_name>` with actual values)
 
 2.  **Create a virtual environment and activate it:**
     ```bash
@@ -54,10 +60,10 @@ python main.py generate --rfp-file path/to/your/rfp_document.md --technology "Yo
 **CLI Options:**
 
 *   `--rfp-file, -f TEXT`: Path to the RFP file (PDF or Markdown). (Required)
-*   `--technology, -t TEXT`: The core technology for the proposal. (Required)
+*   `--technology, -t TEXT`: The core technology for the proposal (e.g., "Python with Django", "OutSystems Platform"). (Required)
 *   `--output-file, -o TEXT`: Path to save the generated Markdown proposal. If not provided, prints to console.
 *   `--api-key, -k TEXT`: OpenAI API key. Overrides key from `.env`.
-*   `--model, -m TEXT`: LLM model to use (e.g., 'openai:gpt-3.5-turbo', 'openai:gpt-4'). Default: 'openai:gpt-3.5-turbo'.
+*   `--model, -m TEXT`: LLM model to use (e.g., 'openai:gpt-3.5-turbo', 'openai:gpt-4-turbo-preview'). Default: 'openai:gpt-3.5-turbo'.
 *   `--help`: Show help message and exit.
 
 **Example:**
@@ -69,9 +75,13 @@ python main.py generate \
     --output-file examples/proposals/my_generated_proposal.md
 ```
 
-This will read `examples/rfps/sample.md`, generate a proposal focused on "Python with FastAPI and Vue.js", and save the output to `examples/proposals/my_generated_proposal.md`.
+If using an OEM technology like "OutSystems", the generator may also include a specific section reviewing that OEM product:
+```bash
+python main.py generate \
+    --rfp-file examples/rfps/sample_oem_rfp.md \
+    --technology "OutSystems Platform" \
+    --output-file examples/proposals/my_outsystems_proposal.md
+```
 
-If you omit `--output-file`, the proposal will be printed to your terminal.
-
-Ensure `examples/rfps/sample.md` exists or use a path to your own RFP file.
-The directory for `--output-file` will be created if it doesn't exist.
+Ensure `examples/rfps/sample.md` (or your own RFP file) exists. The directory for `--output-file` will be created if it doesn't exist.
+The output will be a Markdown file. Mermaid diagrams can be rendered by Markdown viewers/editors that support Mermaid (e.g., GitLab, some VS Code extensions).
