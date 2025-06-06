@@ -1,40 +1,57 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
-class ProposalSection(BaseModel):
-    title: str = Field(description="Title of this proposal section")
-    content: str = Field(description="Generated content for this proposal section")
+class BaseProposalSection(BaseModel):
+    '''Base class for common section fields, if any. For now, sections are distinct.'''
+    pass
 
-class Introduction(ProposalSection):
-    title: str = "Introduction"
-    # client_name: Optional[str] = Field(default=None, description="Name of the client or organization that issued the RFP")
-    # project_understanding: str = Field(description="Our understanding of the project/problem")
+class UnderstandingRequirements(BaseProposalSection):
+    title: str = Field(default="Understanding of Requirements", description="Title of the section")
+    content: str = Field(description="Detailed explanation of the understanding of the client's requirements based on the RFP.")
+    # This could also include a list of key requirements as understood, if not covered elsewhere.
 
-class ExecutiveSummary(ProposalSection):
-    title: str = "Executive Summary"
-    # key_points: List[str] = Field(description="Key points summarizing the proposal")
+class SolutionOverview(BaseProposalSection):
+    title: str = Field(default="Solution Overview", description="Title of the section")
+    content: str = Field(description="High-level overview of the proposed solution, its objectives, and core components.")
+    # sub_sections: Optional[List[ProposalSection]] = Field(default=None, description="Further breakdown of the solution overview if needed")
+    # For now, keeping it simple with a single content block. Sub-sections can be part of the markdown content.
 
-class TechnicalSolution(ProposalSection):
-    title: str = "Technical Solution"
-    # proposed_technology: str = Field(description="The core technology proposed for the solution")
-    # architecture_description: Optional[str] = Field(default=None, description="Description of the proposed system architecture")
-    # implementation_plan: Optional[str] = Field(default=None, description="High-level plan for implementation")
+class SolutionArchitecture(BaseProposalSection):
+    title: str = Field(default="Solution Architecture", description="Title of the section")
+    descriptive_text: str = Field(description="Textual description of the proposed architecture (e.g., components, layers, interactions).")
+    mermaid_script: Optional[str] = Field(default=None, description="Mermaid script for the conceptual/reference architecture diagram.")
 
-class TeamQualifications(ProposalSection):
-    title: str = "Team Qualifications"
-    # team_overview: str = Field(description="Overview of the team's expertise")
-    # relevant_experience: Optional[List[str]] = Field(default=None, description="Examples of relevant past projects or experience")
+class OEMSolutionReview(BaseProposalSection):
+    oem_product_name: str = Field(description="Name of the OEM product/platform being reviewed.")
+    title: str = Field(default="OEM Product Overview", description="Title of the section, will be customized in practice.")
+    content: str = Field(description="Overview of the OEM product, its relevance to the solution, and key features.")
 
-class Pricing(ProposalSection):
-    title: str = "Pricing"
-    # pricing_details: str = Field(description="Details of the pricing structure") # Could be a table or structured text
+    # To make the title dynamic based on product name:
+    # @validator('title', pre=True, always=True)
+    # def set_dynamic_title(cls, v, values):
+    #     if 'oem_product_name' in values:
+    #         return f"Overview: {values['oem_product_name']}"
+    #     return v
+    # Pydantic v2 has a different way for this, using computed_field or model_validator.
+    # For now, the agent creating this section will be responsible for setting a good title.
 
 class Proposal(BaseModel):
-    rfp_reference_document: Optional[str] = Field(default=None, description="Reference to the original RFP document")
-    target_technology: str = Field(description="The technology the proposal is based on")
-    introduction: Optional[Introduction] = Field(default=None)
-    executive_summary: Optional[ExecutiveSummary] = Field(default=None)
-    technical_solution: TechnicalSolution
-    team_qualifications: Optional[TeamQualifications] = Field(default=None)
-    pricing: Optional[Pricing] = Field(default=None)
-    # other_sections: List[ProposalSection] = Field(default_factory=list, description="Any other custom sections")
+    rfp_reference_document: Optional[str] = Field(default=None, description="Reference to the original RFP document (e.g., filename).")
+    target_technology: str = Field(description="The core user-specified technology the proposal is based on (e.g., 'Python with FastAPI', 'OutSystems Platform').")
+
+    understanding_requirements: UnderstandingRequirements
+    solution_overview: SolutionOverview
+    solution_architecture: SolutionArchitecture
+    oem_solution_reviews: Optional[List[OEMSolutionReview]] = Field(default=None, description="List of reviews for any specific OEM products proposed as part of the solution.")
+
+    # Removed: introduction, executive_summary, team_qualifications, pricing
+    # The 'content' of these new sections will be generated by the AI agents.
+
+    # Example of how it might be instantiated:
+    # proposal = Proposal(
+    #     target_technology="OutSystems",
+    #     understanding_requirements=UnderstandingRequirements(content="..."),
+    #     solution_overview=SolutionOverview(content="..."),
+    #     solution_architecture=SolutionArchitecture(descriptive_text="...", mermaid_script="graph TD; A-->B;"),
+    #     oem_solution_reviews=[OEMSolutionReview(oem_product_name="OutSystems", content="...")]
+    # )
