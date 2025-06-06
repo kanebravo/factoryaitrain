@@ -1,0 +1,9 @@
+pydantic-ai
+pypdf2
+markdown-it-py
+python-dotenv
+pytest
+click
+langchain
+openai
+pytest-asyncio
