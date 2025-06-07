@@ -1,9 +1,14 @@
 import asyncio
 import os
 import click
+import sys # For sys.exit
 from dotenv import load_dotenv
 
 from rfp_proposal_generator.generator import ProposalGenerator
+from rfp_proposal_generator.utils.exceptions import ( # Import custom exceptions
+    ProposalGenerationError, ConfigurationError, RFPParserError, LLMGenerationError
+)
+
 
 if not load_dotenv(verbose=True):
     print("Warning: .env file not found or empty. OPENAI_API_KEY might not be set if not already in environment.")
@@ -85,14 +90,29 @@ def generate(rfp_file: str, technology: str, output_file: str, api_key: str, mod
             click.secho("\n--- END OF PROPOSAL ---", fg="blue", bold=True)
             click.echo("Proposal generated. To save to a file, use the --output-file option.")
 
-    except ValueError as ve:
-        click.secho(f"Error during proposal generation: {ve}", fg="red")
+    except ConfigurationError as ce:
+        # This might be raised during ProposalGenerator instantiation if OEM keywords fail to load
+        click.secho(f"Configuration Error: {ce}", fg="red")
+        sys.exit(1) # Ensure non-zero exit code
+    except ProposalGenerationError as pge:
+        click.secho(f"Proposal Generation Error: {pge.stage} - {pge.message}", fg="red")
+        if pge.original_exception:
+            click.secho(f"  Details: {type(pge.original_exception).__name__}: {pge.original_exception}", fg="red")
+        sys.exit(1) # Ensure non-zero exit code
+    except ValueError as ve: # Catch other ValueErrors that might not be wrapped yet
+        click.secho(f"Input Error: {ve}", fg="red")
+        sys.exit(1)
+    # FileNotFoundError should ideally be caught within ProposalGenerator and wrapped as ProposalGenerationError.
+    # If it still escapes, this will catch it.
     except FileNotFoundError as fnfe:
-        click.secho(f"Error: RFP file not found at {rfp_file}", fg="red")
-    except Exception as e:
-        click.secho(f"An unexpected error occurred: {e}", fg="red")
+        click.secho(f"Error: File not found - {fnfe}", fg="red")
+        sys.exit(1)
+    except Exception as e: # Catch-all for any other unexpected errors
+        click.secho(f"An unexpected error occurred: {e.__class__.__name__} - {e}", fg="red")
+        # For debugging, you might want to uncomment the traceback print
         # import traceback
-        # click.echo(traceback.format_exc()) # Uncomment for detailed debugging
+        # click.echo(traceback.format_exc())
+        sys.exit(1)
 
 if __name__ == '__main__':
     generate()
