@@ -14,6 +14,7 @@ This project uses AI (Pydantic AI with OpenAI) to generate **technically focused
             *   **OEM Solution Overview (if applicable)**: If the chosen technology is a specific OEM product (e.g., "OutSystems", "Salesforce"), a brief overview of that product is generated.
 *   Formats the generated content into a clean Markdown proposal.
 *   Provides a Command-Line Interface (CLI) for ease of use.
+*   Includes a simple Web UI using Streamlit for interactive use.
 
 **Note:** This generator focuses on the *technical aspects* of a proposal. It does not currently generate sections like company profiles, detailed project timelines, milestones, or pricing.
 
@@ -36,6 +37,7 @@ This project uses AI (Pydantic AI with OpenAI) to generate **technically focused
     ```bash
     pip install -r requirements.txt
     ```
+    This will install all necessary packages, including `streamlit`.
 
 4.  **Set up your OpenAI API Key:**
     Copy the `.env.example` file to `.env`:
@@ -46,8 +48,13 @@ This project uses AI (Pydantic AI with OpenAI) to generate **technically focused
     ```
     OPENAI_API_KEY="your_openai_api_key_here"
     ```
+    The Streamlit app and CLI will look for this `.env` file in the project root.
 
-## CLI Usage
+## Usage
+
+You can use the RFP Proposal Generator via the Command-Line Interface (CLI) or the Streamlit Web UI.
+
+### CLI Usage
 
 The main way to use the generator is through its command-line interface.
 
@@ -85,3 +92,27 @@ python main.py generate \
 
 Ensure `examples/rfps/sample.md` (or your own RFP file) exists. The directory for `--output-file` will be created if it doesn't exist.
 The output will be a Markdown file. Mermaid diagrams can be rendered by Markdown viewers/editors that support Mermaid (e.g., GitLab, some VS Code extensions).
+
+### Streamlit Web UI Usage
+
+The project also includes a simple web interface built with Streamlit for interactive proposal generation.
+
+1.  **Ensure Setup is Complete:** Make sure you have followed all steps in the "Setup" section, especially installing dependencies and configuring your `OPENAI_API_KEY` in the `.env` file.
+
+2.  **Run the Streamlit App:**
+    Navigate to the project root directory in your terminal and run:
+    ```bash
+    streamlit run streamlit_app.py
+    ```
+
+3.  **Open in Browser:** Streamlit will typically open the app in your default web browser automatically. If not, it will display a local URL (e.g., `http://localhost:8501`) that you can open.
+
+4.  **Use the App:**
+    *   Upload your RFP document (PDF or Markdown) using the file uploader.
+    *   Enter the target technology for the proposal.
+    *   Click the "Generate Proposal" button.
+    *   Wait for the generation to complete (a spinner will indicate progress).
+    *   The generated proposal will be displayed in Markdown format on the page. You can also download it using the download button.
+    *   Error messages will be displayed if any issues occur during the process.
+
+The Streamlit app uses a temporary directory named `temp_rfps` to store uploaded files during processing. This directory will be created if it doesn't exist and is included in `.gitignore`.

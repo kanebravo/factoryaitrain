@@ -1,8 +1,11 @@
 import os
-from typing import Union, List
+from typing import Union, List, Optional # Added Optional
 from PyPDF2 import PdfReader
+from PyPDF2.errors import PdfReadError # For specific PDF errors
 from markdown_it import MarkdownIt
+from langchain_text_splitters import RecursiveCharacterTextSplitter # Added
 from ..models.rfp_models import RFP, RFPSection # Assuming rfp_models.py is one level up in models directory
+from ..utils.exceptions import RFPParserError # Import custom exception
 
 class RFPParser:
     def __init__(self, file_path: str):
@@ -28,10 +31,13 @@ class RFPParser:
                 for page_num in range(len(reader.pages)):
                     page = reader.pages[page_num]
                     text_content.append(page.extract_text() or "")
+            if not text_content: # Check if any text was extracted
+                 raise RFPParserError(f"No text could be extracted from PDF: {self.file_path}. The file might be empty, image-based, or corrupted.")
             return "\n".join(text_content)
-        except Exception as e:
-            print(f"Error reading PDF file: {e}")
-            return "" # Return empty string or raise a custom exception
+        except PdfReadError as e: # Catch specific PyPDF2 error
+            raise RFPParserError(f"Error reading PDF file '{self.file_path}': PyPDF2 PdfReadError - {e}") from e
+        except Exception as e: # Catch other potential errors
+            raise RFPParserError(f"An unexpected error occurred while parsing PDF file '{self.file_path}': {e}") from e
 
     def _parse_markdown(self) -> str:
         try:
@@ -41,10 +47,13 @@ class RFPParser:
             # Parsing into HTML or a token stream can be done if needed for structuring.
             # md = MarkdownIt()
             # html_content = md.render(md_content)
+            if not md_content.strip(): # Check if content is just whitespace
+                 raise RFPParserError(f"Markdown file '{self.file_path}' is empty or contains only whitespace.")
             return md_content
+        except FileNotFoundError: # Should be caught by __init__, but good practice here too
+             raise
         except Exception as e:
-            print(f"Error reading Markdown file: {e}")
-            return "" # Return empty string or raise a custom exception
+            raise RFPParserError(f"Error reading or parsing Markdown file '{self.file_path}': {e}") from e
 
     def parse(self) -> RFP:
         '''
@@ -63,9 +72,26 @@ class RFPParser:
         # or by leveraging an AI agent.
         initial_section = RFPSection(title="Full Document", content=full_text)
 
+        text_chunks: Optional[List[str]] = None
+        if full_text and full_text.strip():
+            # Initialize text splitter
+            # Common defaults for many LLMs. Adjust chunk_size based on typical RFP section sizes or LLM context limits.
+            # Overlap helps maintain context between chunks.
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=4000,  # Aim for chunks that fit well within typical LLM context windows
+                chunk_overlap=400,   # Provides some context continuity between chunks
+                length_function=len,
+                is_separator_regex=False,
+            )
+            if len(full_text) < text_splitter.chunk_size: # Use public attribute
+                text_chunks = [full_text]
+            else:
+                text_chunks = text_splitter.split_text(full_text)
+
         return RFP(
             file_name=os.path.basename(self.file_path),
             full_text=full_text,
+            text_chunks=text_chunks, # Store the generated chunks
             sections=[initial_section]
             # summary, key_requirements, evaluation_criteria will be filled by AI agents later
         )

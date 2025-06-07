@@ -7,3 +7,5 @@ click
 langchain
 openai
 pytest-asyncio
+langchain-text-splitters
+streamlit
