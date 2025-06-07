@@ -83,7 +83,8 @@ class RFPParser:
                 length_function=len,
                 is_separator_regex=False,
             )
-            if len(full_text) < text_splitter.chunk_size: # Use public attribute
+            # Check if the text is smaller than the chunk size
+            if len(full_text) < 4000:  # Use the same value as chunk_size
                 text_chunks = [full_text]
             else:
                 text_chunks = text_splitter.split_text(full_text)
